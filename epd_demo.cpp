@@ -26,7 +26,7 @@ constexpr uint8_t SPI_MODE = SPI_MODE_0;
 constexpr int PANEL_WIDTH = 128;
 constexpr int PANEL_HEIGHT = 296;
 constexpr size_t BUFFER_SIZE = (PANEL_WIDTH * PANEL_HEIGHT) / 8;
-constexpr bool BUSY_ACTIVE_HIGH = true;  // Waveshare 2.9" V2 keeps BUSY high while busy
+constexpr bool BUSY_ACTIVE_HIGH = false;  // BUSY goes low while panel is processing
 
 struct Pins {
     unsigned int dc;
