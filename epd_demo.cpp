@@ -56,7 +56,7 @@ private:
     void reset();
 
     bool busy_asserted() const;
-    void wait_busy(const std::string& stage, std::chrono::milliseconds poll{20});
+    void wait_busy(const std::string& stage, std::chrono::milliseconds poll = std::chrono::milliseconds(20));
 
     void send_cmd(uint8_t cmd);
     void send_data(uint8_t byte);
