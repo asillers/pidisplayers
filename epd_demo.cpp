@@ -26,7 +26,7 @@ constexpr uint8_t SPI_MODE = SPI_MODE_0;
 constexpr int PANEL_WIDTH = 128;
 constexpr int PANEL_HEIGHT = 296;
 constexpr size_t BUFFER_SIZE = (PANEL_WIDTH * PANEL_HEIGHT) / 8;
-constexpr bool BUSY_ACTIVE_HIGH = false;  // BUSY goes low while panel is processing
+constexpr bool BUSY_ACTIVE_HIGH = true;  // module keeps BUSY high while processing
 
 struct Pins {
     unsigned int dc;
@@ -131,7 +131,7 @@ bool Epd29::busy_asserted() {
 
 void Epd29::wait_busy(const std::string& stage, std::chrono::milliseconds poll) {
     auto start = std::chrono::steady_clock::now();
-    auto timeout = start + std::chrono::seconds(10);
+    auto timeout = start + std::chrono::seconds(20);
 
     while (busy_asserted()) {
         if (std::chrono::steady_clock::now() > timeout) {
