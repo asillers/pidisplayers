@@ -58,7 +58,9 @@ private:
 
     ControlPins pins_;
     std::string chip_;
-    gpiod::line_request request_;
+    gpiod::line line_cs_;
+    gpiod::line line_dc_;
+    gpiod::line line_rst_;
     int spi_fd_;
 };
 
@@ -77,29 +79,32 @@ void Gc9Panel::open_spi() {
 
 void Gc9Panel::request_lines() {
     gpiod::chip chip(chip_);
+    gpiod::line_request_config cfg;
+    cfg.consumer = "gc9-demo";
+    cfg.request_type = gpiod::line_request::DIRECTION_OUTPUT;
 
-    gpiod::line_settings out_settings;
-    out_settings.set_direction(gpiod::line::direction::OUTPUT);
-    out_settings.set_output_value(gpiod::line::value::INACTIVE);
+    line_cs_ = chip.get_line(pins_.cs);
+    line_dc_ = chip.get_line(pins_.dc);
+    line_rst_ = chip.get_line(pins_.rst);
 
-    gpiod::line_config lcfg;
-    lcfg.add_line_settings(pins_.cs, out_settings);
-    lcfg.add_line_settings(pins_.dc, out_settings);
-    lcfg.add_line_settings(pins_.rst, out_settings);
-
-    gpiod::request_config rcfg;
-    rcfg.set_consumer("gc9-demo");
-
-    request_ = chip.request_lines(rcfg, lcfg);
-
-    // idle state
-    set_pin(pins_.cs, true);
-    set_pin(pins_.dc, true);
-    set_pin(pins_.rst, true);
+    line_cs_.request(cfg, 1);
+    line_dc_.request(cfg, 1);
+    line_rst_.request(cfg, 1);
 }
 
 void Gc9Panel::set_pin(unsigned int offset, bool value) {
-    request_.set_value(offset, value ? gpiod::line::value::ACTIVE : gpiod::line::value::INACTIVE);
+    gpiod::line* target = nullptr;
+    if (offset == pins_.cs) {
+        target = &line_cs_;
+    } else if (offset == pins_.dc) {
+        target = &line_dc_;
+    } else if (offset == pins_.rst) {
+        target = &line_rst_;
+    }
+
+    if (target) {
+        target->set_value(value ? 1 : 0);
+    }
 }
 
 void Gc9Panel::send(uint8_t cmd, std::initializer_list<uint8_t> data, uint16_t delay_ms) {

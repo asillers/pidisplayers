@@ -57,7 +57,9 @@ private:
 
     Pins pins_;
     std::string chip_;
-    gpiod::line_request request_;
+    gpiod::line line_dc_;
+    gpiod::line line_rst_;
+    gpiod::line line_busy_;
     int spi_fd_;
 };
 
@@ -77,36 +79,35 @@ void Epd29::open_spi() {
 void Epd29::request_lines() {
     gpiod::chip chip(chip_);
 
-    gpiod::line_settings out_settings;
-    out_settings.set_direction(gpiod::line::direction::OUTPUT);
-    out_settings.set_output_value(gpiod::line::value::INACTIVE);
+    gpiod::line_request_config out_cfg;
+    out_cfg.consumer = "epd-demo";
+    out_cfg.request_type = gpiod::line_request::DIRECTION_OUTPUT;
 
-    gpiod::line_settings busy_settings;
-    busy_settings.set_direction(gpiod::line::direction::INPUT);
-    busy_settings.set_bias(gpiod::line::bias::PULL_UP);
+    gpiod::line_request_config in_cfg;
+    in_cfg.consumer = "epd-demo";
+    in_cfg.request_type = gpiod::line_request::DIRECTION_INPUT;
+    in_cfg.flags = gpiod::line_request::FLAG_BIAS_PULL_UP;
 
-    gpiod::line_config lcfg;
-    lcfg.add_line_settings(pins_.dc, out_settings);
-    lcfg.add_line_settings(pins_.rst, out_settings);
-    lcfg.add_line_settings(pins_.busy, busy_settings);
+    line_dc_ = chip.get_line(pins_.dc);
+    line_rst_ = chip.get_line(pins_.rst);
+    line_busy_ = chip.get_line(pins_.busy);
 
-    gpiod::request_config rcfg;
-    rcfg.set_consumer("epd-demo");
-
-    request_ = chip.request_lines(rcfg, lcfg);
+    line_dc_.request(out_cfg, 0);
+    line_rst_.request(out_cfg, 1);
+    line_busy_.request(in_cfg, 0);
 }
 
 void Epd29::reset() {
-    request_.set_value(pins_.rst, gpiod::line::value::ACTIVE);
+    line_rst_.set_value(1);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    request_.set_value(pins_.rst, gpiod::line::value::INACTIVE);
+    line_rst_.set_value(0);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    request_.set_value(pins_.rst, gpiod::line::value::ACTIVE);
+    line_rst_.set_value(1);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
 void Epd29::wait_busy(const std::string& stage) {
-    while (request_.get_value(pins_.busy) == gpiod::line::value::INACTIVE) {
+    while (line_busy_.get_value() == 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
     }
     if (!stage.empty()) {
@@ -115,17 +116,17 @@ void Epd29::wait_busy(const std::string& stage) {
 }
 
 void Epd29::send_cmd(uint8_t cmd) {
-    request_.set_value(pins_.dc, gpiod::line::value::INACTIVE);
+    line_dc_.set_value(0);
     ::write(spi_fd_, &cmd, 1);
 }
 
 void Epd29::send_data(uint8_t byte) {
-    request_.set_value(pins_.dc, gpiod::line::value::ACTIVE);
+    line_dc_.set_value(1);
     ::write(spi_fd_, &byte, 1);
 }
 
 void Epd29::send_data(const uint8_t* data, size_t len) {
-    request_.set_value(pins_.dc, gpiod::line::value::ACTIVE);
+    line_dc_.set_value(1);
     ::write(spi_fd_, data, len);
 }
 
