@@ -55,7 +55,7 @@ private:
     void open_spi();
     void reset();
 
-    bool busy_asserted() const;
+    bool busy_asserted();
     void wait_busy(const std::string& stage, std::chrono::milliseconds poll = std::chrono::milliseconds(20));
 
     void send_cmd(uint8_t cmd);
@@ -119,7 +119,7 @@ void Epd29::reset() {
     std::this_thread::sleep_for(std::chrono::milliseconds(120));
 }
 
-bool Epd29::busy_asserted() const {
+bool Epd29::busy_asserted() {
     if (!request_) {
         throw std::runtime_error("lines not requested");
     }
