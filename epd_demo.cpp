@@ -97,7 +97,7 @@ void Epd29::request_lines() {
     gpiod::request_config rcfg;
     rcfg.set_consumer("epd-demo");
 
-    gpiod::request_builder builder(chip);
+    auto builder = chip.prepare_request();
     builder.set_consumer("epd-demo");
     builder.set_line_config(lcfg);
     request_ = builder.do_request();
