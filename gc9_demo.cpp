@@ -90,7 +90,10 @@ void Gc9Panel::request_lines() {
     gpiod::request_config rcfg;
     rcfg.set_consumer("gc9-demo");
 
-    request_ = chip.request_lines(rcfg, lcfg);
+    gpiod::request_builder builder(chip);
+    builder.set_consumer("gc9-demo");
+    builder.set_line_config(lcfg);
+    request_ = builder.do_request();
 }
 
 void Gc9Panel::set_pin(unsigned int offset, bool value) {
