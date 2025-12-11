@@ -20,9 +20,9 @@
 namespace {
 
 constexpr char SPI_PATH[] = "/dev/spidev0.0";
-constexpr uint32_t SPI_SPEED_HZ = 24'000'000;   // GC9A01A is fine up to 50 MHz
+constexpr uint32_t SPI_SPEED_HZ = 2'000'000;   // GC9A01A is fine up to 50 MHz
 constexpr uint8_t SPI_BITS = 8;
-constexpr uint8_t SPI_MODE = SPI_MODE_0;
+constexpr uint8_t SPI_MODE = SPI_MODE_3;
 
 constexpr uint16_t PANEL_WIDTH = 240;
 constexpr uint16_t PANEL_HEIGHT = 240;
@@ -90,7 +90,10 @@ void Gc9Panel::request_lines() {
     gpiod::request_config rcfg;
     rcfg.set_consumer("gc9-demo");
 
-    request_ = chip.request_lines(rcfg, lcfg);
+    auto builder = chip.prepare_request();
+    builder.set_consumer("gc9-demo");
+    builder.set_line_config(lcfg);
+    request_ = builder.do_request();
 }
 
 void Gc9Panel::set_pin(unsigned int offset, bool value) {
